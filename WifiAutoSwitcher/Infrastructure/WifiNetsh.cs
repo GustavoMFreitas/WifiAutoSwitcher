@@ -161,13 +161,13 @@ internal sealed class WifiNetsh : IWifiClient
     private static void TriggerRefreshScan()
     {
         // netsh often reports cached scan results unless the WLAN stack is actively scanned first.
-        if (WlanApi.TryTriggerScan())
+        if (WlanApi.TryTriggerScanAndWait(TimeSpan.FromSeconds(8)))
         {
-            Thread.Sleep(2200);
+            Thread.Sleep(350);
             return;
         }
 
-        Thread.Sleep(1200);
+        Thread.Sleep(2200);
     }
 
     private static string RunNetsh(string arguments, bool throwOnError = true)
