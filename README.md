@@ -65,8 +65,11 @@ From `\WifiAutoSwitcher`:
 .\install-task.bat 3
 ```
 
-This creates a scheduled task named `WifiAutoSwitcher` that runs `run-switcher.bat`.
-If a published exe exists at `.\publish\WifiAutoSwitcher\WifiAutoSwitcher.exe`, the script uses it automatically.
+This creates a scheduled task named `WifiAutoSwitcher` that:
+
+- Runs hidden in background (no visible `cmd` window)
+- Is allowed to run on battery
+- Executes windowless via `run-switcher.vbs`, which calls `run-switcher.ps1` (published exe preferred, `dotnet run` fallback)
 
 ### Uninstall
 
