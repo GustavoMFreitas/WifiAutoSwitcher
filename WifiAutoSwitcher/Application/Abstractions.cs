@@ -15,3 +15,8 @@ internal interface IConnectivityProbe
 {
     ConnectivityResult Check(IEnumerable<string> hosts, int attempts, int timeoutMs);
 }
+
+internal interface INetworkSwitchNotifier
+{
+    void NotifySwitch(string? fromSsid, string toSsid, double averageLatencyMs);
+}

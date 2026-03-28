@@ -2,7 +2,10 @@ using WifiAutoSwitcher.Domain;
 
 namespace WifiAutoSwitcher.Application;
 
-internal sealed class WifiSwitcherApp(IWifiClient wifiClient, IConnectivityProbe connectivityProbe)
+internal sealed class WifiSwitcherApp(
+    IWifiClient wifiClient,
+    IConnectivityProbe connectivityProbe,
+    INetworkSwitchNotifier networkSwitchNotifier)
 {
     public int Run(CliOptions options)
     {
@@ -89,6 +92,11 @@ internal sealed class WifiSwitcherApp(IWifiClient wifiClient, IConnectivityProbe
         }
 
         Console.WriteLine($"Connected to {best.Network.Ssid}. Internet reachable. Avg latency: {connectivity.AverageLatencyMs} ms");
+        if (!string.Equals(previousSsid, best.Network.Ssid, StringComparison.OrdinalIgnoreCase))
+        {
+            networkSwitchNotifier.NotifySwitch(previousSsid, best.Network.Ssid, connectivity.AverageLatencyMs);
+        }
+
         return 0;
     }
 

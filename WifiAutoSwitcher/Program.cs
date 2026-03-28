@@ -25,7 +25,10 @@ internal static class ProgramMain
             return 1;
         }
 
-        var app = new WifiSwitcherApp(new WifiNetsh(), new ConnectivityProbe());
+        var app = new WifiSwitcherApp(
+            new WifiNetsh(),
+            new ConnectivityProbe(),
+            new WindowsToastNetworkSwitchNotifier());
         return app.Run(options);
     }
 }
