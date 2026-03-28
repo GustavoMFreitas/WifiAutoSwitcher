@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text;
 using WifiAutoSwitcher.Application;
 
 namespace WifiAutoSwitcher.Infrastructure;
@@ -17,30 +16,34 @@ internal sealed class WindowsToastNetworkSwitchNotifier : INetworkSwitchNotifier
         var title = "Wi-Fi switched";
         var message = $"{fromText} -> {toSsid} | Avg latency: {averageLatencyMs:0.##} ms";
 
-        var escapedTitle = EscapeForPowerShellSingleQuotedString(title);
-        var escapedMessage = EscapeForPowerShellSingleQuotedString(message);
+        var escapedTitle = EscapeForPowerShellLiteralString(title);
+        var escapedMessage = EscapeForPowerShellLiteralString(message);
         var script = $"""
-[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
-[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
-$xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-$xml.LoadXml("<toast><visual><binding template='ToastGeneric'><text>{escapedTitle}</text><text>{escapedMessage}</text></binding></visual></toast>")
-$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
-[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('WifiAutoSwitcher').Show($toast)
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+$notify = New-Object System.Windows.Forms.NotifyIcon
+$notify.Icon = [System.Drawing.SystemIcons]::Information
+$notify.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info
+$notify.BalloonTipTitle = '{escapedTitle}'
+$notify.BalloonTipText = '{escapedMessage}'
+$notify.Visible = $true
+$notify.ShowBalloonTip(5000)
+Start-Sleep -Milliseconds 5500
+$notify.Dispose()
 """;
 
         try
         {
-            var encodedScript = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
             var startInfo = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = $"-NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand {encodedScript}",
+                Arguments = $"-NoProfile -NonInteractive -WindowStyle Hidden -Command \"{EscapeForPowerShellCommandArgument(script)}\"",
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
 
             using var process = Process.Start(startInfo);
-            process?.WaitForExit(2000);
+            process?.WaitForExit(7000);
         }
         catch
         {
@@ -48,8 +51,13 @@ $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
         }
     }
 
-    private static string EscapeForPowerShellSingleQuotedString(string value)
+    private static string EscapeForPowerShellLiteralString(string value)
     {
         return value.Replace("'", "''", StringComparison.Ordinal);
+    }
+
+    private static string EscapeForPowerShellCommandArgument(string value)
+    {
+        return value.Replace("\"", "`\"", StringComparison.Ordinal);
     }
 }
